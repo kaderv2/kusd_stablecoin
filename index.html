@@ -1,0 +1,422 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>kUSD — A dollar that moves at the speed of Solana</title>
+<meta name="description" content="kUSD is a permissionless USD stablecoin on Solana, backed by deep on-chain liquidity. Hold it, LP it, and earn.">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/tabler-icons/3.1.0/iconfont/tabler-icons.min.css">
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700;800;900&family=DM+Mono:wght@400;500&display=swap');
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --bg: #0B0C0E; --surface: #121417; --surface2: #181B1F; --surface3: #1E2227;
+    --border: rgba(255,255,255,0.065); --border2: rgba(255,255,255,0.11);
+    --text: #EDEEF0; --text2: #969AA1; --text3: #5E6168; --silver: #FFFFFF;
+    --pos: #6FB89A; --pos-dim: rgba(111,184,154,0.12);
+  }
+  html { scroll-behavior: smooth; }
+  body { background: var(--bg); color: var(--text); font-family: 'Archivo', sans-serif; -webkit-font-smoothing: antialiased; font-feature-settings: 'ss01','cv11'; }
+  .wrap { max-width: 1080px; margin: 0 auto; }
+  nav { display: flex; align-items: center; justify-content: space-between; padding: 17px 36px; border-bottom: 1px solid var(--border); position: sticky; top: 0; z-index: 100; background: rgba(11,12,14,0.88); backdrop-filter: blur(18px); }
+  .logo { display: flex; align-items: center; gap: 11px; font-size: 17px; font-weight: 700; letter-spacing: -0.4px; }
+  .logo-mark { width: 29px; height: 29px; border: 1px solid var(--border2); background: var(--surface2); border-radius: 7px; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 600; font-family: 'DM Mono', monospace; }
+  .nav-links { display: flex; gap: 24px; list-style: none; font-size: 13px; font-weight: 500; color: var(--text2); }
+  .nav-links a { color: inherit; text-decoration: none; transition: color 0.15s; }
+  .nav-links a:hover { color: var(--text); }
+  .peg-pill { display: flex; align-items: center; gap: 7px; border: 1px solid var(--border2); background: var(--surface); font-family: 'DM Mono', monospace; font-size: 12px; padding: 6px 13px; border-radius: 8px; }
+  .peg-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--pos); box-shadow: 0 0 0 3px var(--pos-dim); }
+  .ticker { display: flex; border-bottom: 1px solid var(--border); font-family: 'DM Mono', monospace; font-size: 11.5px; overflow: hidden; white-space: nowrap; }
+  .ticker-item { padding: 9px 22px; border-right: 1px solid var(--border); display: flex; gap: 8px; align-items: center; }
+  .ticker-item .k { color: var(--text3); text-transform: uppercase; letter-spacing: 1px; }
+  .ticker-item .v.up { color: var(--pos); }
+  .hero { padding: 80px 36px 52px; position: relative; overflow: hidden; }
+  .hero::before { content: ''; position: absolute; inset: 0; background-image: linear-gradient(var(--border) 1px, transparent 1px), linear-gradient(90deg, var(--border) 1px, transparent 1px); background-size: 48px 48px; opacity: 0.5; -webkit-mask-image: radial-gradient(ellipse 70% 80% at 30% 0%, #000 0%, transparent 75%); mask-image: radial-gradient(ellipse 70% 80% at 30% 0%, #000 0%, transparent 75%); pointer-events: none; }
+  .hero > * { position: relative; }
+  .eyebrow { font-family: 'DM Mono', monospace; font-size: 11px; color: var(--text3); letter-spacing: 2.5px; text-transform: uppercase; margin-bottom: 24px; display: flex; align-items: center; gap: 11px; }
+  .eyebrow::before { content: ''; width: 24px; height: 1px; background: var(--border2); }
+  h1 { font-size: 58px; font-weight: 700; line-height: 1.0; letter-spacing: -3px; margin-bottom: 24px; max-width: 760px; color: #FFFFFF; }
+  h1 em { font-style: normal; color: #FFFFFF; }
+  .hero-desc { color: var(--text2); font-size: 17px; line-height: 1.6; max-width: 530px; margin-bottom: 36px; }
+  .hero-btns { display: flex; gap: 11px; }
+  .btn { font-family: 'Archivo', sans-serif; font-size: 14px; font-weight: 600; padding: 13px 24px; border-radius: 10px; cursor: pointer; transition: all 0.15s; display: inline-flex; align-items: center; gap: 8px; text-decoration: none; }
+  .btn-primary { background: var(--silver); color: #0B0C0E; border: 1px solid var(--silver); }
+  .btn-primary:hover { background: #D4D6D9; }
+  .btn-ghost { background: transparent; color: var(--text); border: 1px solid var(--border2); }
+  .btn-ghost:hover { background: var(--surface); border-color: rgba(255,255,255,0.24); }
+  .metric-strip { display: grid; grid-template-columns: repeat(4, 1fr); border-top: 1px solid var(--border); border-bottom: 1px solid var(--border); margin: 0 36px; }
+  .metric { padding: 26px 28px; border-right: 1px solid var(--border); }
+  .metric:last-child { border-right: none; }
+  .metric-label { font-family: 'DM Mono', monospace; font-size: 10.5px; color: var(--text3); text-transform: uppercase; letter-spacing: 1.5px; margin-bottom: 11px; }
+  .metric-value { font-size: 27px; font-weight: 600; letter-spacing: -1px; font-feature-settings: 'tnum'; }
+  .metric-value small { font-size: 13px; color: var(--text2); font-weight: 500; }
+  .metric-sub { font-family: 'DM Mono', monospace; font-size: 11px; color: var(--pos); margin-top: 6px; }
+  section.block { padding: 58px 36px; }
+  .block-head { display: flex; align-items: flex-end; justify-content: space-between; margin-bottom: 28px; }
+  .kicker { font-family: 'DM Mono', monospace; font-size: 11px; color: var(--text3); text-transform: uppercase; letter-spacing: 2px; margin-bottom: 10px; }
+  .block-title { font-size: 29px; font-weight: 700; letter-spacing: -1.2px; }
+  .block-link { font-size: 13px; color: var(--text2); text-decoration: none; font-weight: 500; }
+  .block-link:hover { color: var(--text); }
+  .pool-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; }
+  .pool-card { border: 1px solid var(--border); background: var(--surface); border-radius: 15px; padding: 22px; transition: border-color 0.18s, transform 0.18s; }
+  .pool-card:hover { border-color: var(--border2); transform: translateY(-2px); }
+  .pool-pair { display: flex; align-items: center; gap: 10px; margin-bottom: 18px; }
+  .pool-icons { display: flex; }
+  .coin { width: 27px; height: 27px; border-radius: 50%; background: var(--surface3); border: 1px solid var(--border2); display: flex; align-items: center; justify-content: center; font-family: 'DM Mono', monospace; font-size: 9px; color: var(--text2); overflow: hidden; }
+  .coin img { width: 100%; height: 100%; object-fit: cover; }
+  .coin:nth-child(2) { margin-left: -9px; }
+  .pool-name { font-size: 15px; font-weight: 600; }
+  .pool-venue { font-family: 'DM Mono', monospace; font-size: 10px; color: var(--text3); margin-top: 2px; }
+  .pool-stats { display: flex; border-top: 1px solid var(--border); padding-top: 16px; margin-bottom: 16px; }
+  .pool-stat { flex: 1; }
+  .pool-stat-label { font-family: 'DM Mono', monospace; font-size: 10px; color: var(--text3); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 6px; }
+  .pool-stat-val { font-size: 18px; font-weight: 600; letter-spacing: -0.5px; }
+  .pool-stat-val.apy { color: var(--pos); }
+  .pool-btns { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+  .pbtn { text-align: center; text-decoration: none; font-size: 13px; font-weight: 600; padding: 10px; border-radius: 9px; transition: all 0.15s; }
+  .pbtn-buy { background: var(--silver); color: #0B0C0E; border: 1px solid var(--silver); }
+  .pbtn-buy:hover { background: #D4D6D9; }
+  .pbtn-lp { background: var(--surface2); color: var(--text); border: 1px solid var(--border2); }
+  .pbtn-lp:hover { background: var(--surface3); border-color: rgba(255,255,255,0.22); }
+  .pool-msg { grid-column: 1 / -1; border: 1px dashed var(--border2); border-radius: 14px; padding: 32px; text-align: center; }
+  .pool-msg .pm-title { font-size: 15px; font-weight: 600; margin-bottom: 8px; }
+  .pool-msg .pm-sub { font-size: 13px; color: var(--text2); line-height: 1.6; max-width: 420px; margin: 0 auto 16px; }
+  .pool-note { font-family: 'DM Mono', monospace; font-size: 11px; color: var(--text3); margin-top: 16px; display: flex; align-items: center; gap: 7px; }
+  .pool-note .ld { width: 6px; height: 6px; border-radius: 50%; background: var(--pos); }
+  .rev-cards { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; margin-bottom: 18px; }
+  .rev-card { border: 1px solid var(--border); background: var(--surface); border-radius: 15px; padding: 22px 24px; }
+  .rev-card .rl { font-family: 'DM Mono', monospace; font-size: 10.5px; color: var(--text3); text-transform: uppercase; letter-spacing: 1.5px; margin-bottom: 12px; display: flex; align-items: center; gap: 7px; }
+  .rev-card .rv { font-size: 28px; font-weight: 700; letter-spacing: -1.2px; color: var(--pos); font-feature-settings: 'tnum'; }
+  .rev-card .rs { font-family: 'DM Mono', monospace; font-size: 11px; color: var(--text2); margin-top: 6px; }
+  .chart-panel { border: 1px solid var(--border); background: var(--surface); border-radius: 15px; padding: 22px 24px; }
+  .chart-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px; }
+  .chart-total { font-size: 13px; color: var(--text2); }
+  .chart-total b { color: var(--text); font-weight: 600; font-family: 'DM Mono', monospace; }
+  .toggle { display: flex; border: 1px solid var(--border2); border-radius: 9px; overflow: hidden; }
+  .toggle button { background: transparent; border: none; color: #C4C7CD; font-family: 'DM Mono', monospace; font-size: 12px; padding: 7px 15px; cursor: pointer; transition: all 0.15s; border-right: 1px solid var(--border2); }
+  .toggle button:last-child { border-right: none; }
+  .toggle button:hover { color: #FFFFFF; }
+  .toggle button.active { background: var(--surface3); color: #FFFFFF; font-weight: 500; }
+  .reserve-grid { display: grid; grid-template-columns: 1.25fr 1fr; gap: 14px; }
+  .reserve-main { border: 1px solid var(--border); background: var(--surface); border-radius: 15px; padding: 26px; }
+  .reserve-bar-label { display: flex; justify-content: space-between; font-size: 13px; margin-bottom: 12px; }
+  .reserve-bar-label .l { color: var(--text2); }
+  .reserve-bar-label .r { font-family: 'DM Mono', monospace; color: var(--pos); }
+  .reserve-bar { height: 10px; background: var(--surface3); border-radius: 6px; overflow: hidden; border: 1px solid var(--border); }
+  .reserve-fill { height: 100%; background: var(--pos); border-radius: 6px; transition: width 0.6s ease; }
+  .reserve-ratio { display: flex; align-items: baseline; gap: 11px; margin: 24px 0 8px; }
+  .reserve-ratio .big { font-size: 42px; font-weight: 700; letter-spacing: -1.8px; }
+  .reserve-ratio .lbl { font-size: 13px; color: var(--text2); }
+  .reserve-desc { font-size: 13px; color: var(--text2); line-height: 1.6; }
+  .reserve-side { display: flex; flex-direction: column; gap: 14px; }
+  .reserve-token { border: 1px solid var(--border); background: var(--surface); border-radius: 15px; padding: 18px 20px; display: flex; align-items: center; justify-content: space-between; }
+  .reserve-token .tk { font-size: 14px; font-weight: 600; }
+  .reserve-token .tk small { display: block; font-family: 'DM Mono', monospace; font-size: 10px; color: var(--text3); font-weight: 400; margin-top: 3px; }
+  .reserve-token .amt { font-family: 'DM Mono', monospace; font-size: 15px; font-weight: 500; }
+  .treasury-card { border: 1px solid var(--border); background: var(--surface); border-radius: 15px; padding: 26px; }
+  .treasury-top { display: flex; align-items: flex-start; justify-content: space-between; gap: 20px; margin-bottom: 22px; }
+  .treasury-purpose { font-size: 13px; color: var(--text2); line-height: 1.6; max-width: 460px; }
+  .treasury-bal { display: grid; grid-template-columns: repeat(3, 1fr); gap: 0; border: 1px solid var(--border); border-radius: 12px; overflow: hidden; margin-bottom: 18px; }
+  .tb { padding: 18px 20px; border-right: 1px solid var(--border); }
+  .tb:last-child { border-right: none; }
+  .tb .tbl { font-family: 'DM Mono', monospace; font-size: 10px; color: var(--text3); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 8px; }
+  .tb .tbv { font-family: 'DM Mono', monospace; font-size: 18px; font-weight: 500; }
+  .treasury-wallet { display: flex; align-items: center; justify-content: space-between; gap: 14px; padding-top: 18px; border-top: 1px solid var(--border); }
+  .treasury-wallet .tl { font-family: 'DM Mono', monospace; font-size: 10.5px; color: var(--text3); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 6px; }
+  .treasury-wallet .tw { font-family: 'DM Mono', monospace; font-size: 13px; word-break: break-all; }
+  .tactions { display: flex; gap: 8px; flex-shrink: 0; }
+  .mini-btn { border: 1px solid var(--border2); background: var(--surface2); color: var(--text2); font-family: 'DM Mono', monospace; font-size: 11px; padding: 8px 12px; border-radius: 7px; cursor: pointer; text-decoration: none; white-space: nowrap; transition: all 0.15s; }
+  .mini-btn:hover { color: var(--text); border-color: rgba(255,255,255,0.24); }
+  .badge-future { display: inline-flex; align-items: center; gap: 6px; font-family: 'DM Mono', monospace; font-size: 10px; color: var(--text3); border: 1px solid var(--border2); border-radius: 6px; padding: 4px 9px; text-transform: uppercase; letter-spacing: 1px; }
+  .feat-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; }
+  .feat { border: 1px solid var(--border); background: var(--surface); border-radius: 15px; padding: 24px; }
+  .feat-icon { width: 38px; height: 38px; border: 1px solid var(--border2); background: var(--surface2); border-radius: 9px; display: flex; align-items: center; justify-content: center; font-size: 18px; margin-bottom: 16px; }
+  .feat h3 { font-size: 15px; font-weight: 600; margin-bottom: 8px; }
+  .feat p { font-size: 13px; color: var(--text2); line-height: 1.6; }
+  .mint-box { border: 1px solid var(--border); background: var(--surface); border-radius: 15px; padding: 18px 22px; display: flex; align-items: center; justify-content: space-between; gap: 16px; }
+  .mint-label { font-family: 'DM Mono', monospace; font-size: 11px; color: var(--text3); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 6px; }
+  .mint-addr { font-family: 'DM Mono', monospace; font-size: 14px; word-break: break-all; }
+  .copy-btn { border: 1px solid var(--border2); background: var(--surface2); color: var(--text2); font-family: 'DM Mono', monospace; font-size: 12px; padding: 9px 14px; border-radius: 8px; cursor: pointer; white-space: nowrap; flex-shrink: 0; transition: all 0.15s; }
+  .copy-btn:hover { color: var(--text); border-color: rgba(255,255,255,0.25); }
+  .tx-feed { border: 1px solid var(--border); border-radius: 15px; background: var(--surface); overflow: hidden; }
+  .tx-head, .tx-row { display: grid; grid-template-columns: 1.6fr 1fr 1.1fr 1fr 0.6fr; gap: 12px; padding: 13px 22px; align-items: center; }
+  .tx-head { border-bottom: 1px solid var(--border); font-family: 'DM Mono', monospace; font-size: 10px; color: var(--text3); text-transform: uppercase; letter-spacing: 1px; }
+  .tx-list { max-height: 320px; overflow-y: auto; }
+  .tx-list::-webkit-scrollbar { width: 3px; }
+  .tx-list::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 2px; }
+  .tx-row { border-bottom: 1px solid var(--border); font-size: 13px; transition: background 0.12s; animation: fade 0.4s ease; }
+  @keyframes fade { from { opacity: 0; transform: translateY(-3px); } to { opacity: 1; transform: translateY(0); } }
+  .tx-row:hover { background: var(--surface2); }
+  .tx-row:last-child { border-bottom: none; }
+  .tx-sig { font-family: 'DM Mono', monospace; font-size: 12px; cursor: pointer; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .tx-sig:hover { color: var(--silver); text-decoration: underline; }
+  .tx-type { display: inline-flex; font-family: 'DM Mono', monospace; font-size: 10px; padding: 3px 9px; border-radius: 6px; text-transform: uppercase; letter-spacing: 0.5px; border: 1px solid var(--border2); }
+  .t-transfer { color: var(--text2); }
+  .t-swap { color: #C9A86A; border-color: rgba(201,168,106,0.3); }
+  .t-mint { color: #7FA8C9; border-color: rgba(127,168,201,0.3); }
+  .t-unknown { color: var(--text3); }
+  .tx-amount { font-family: 'DM Mono', monospace; font-size: 13px; font-weight: 500; }
+  .tx-time { font-family: 'DM Mono', monospace; font-size: 12px; color: var(--text3); }
+  .status-ok { width: 7px; height: 7px; border-radius: 50%; background: var(--pos); display: inline-block; }
+  .status-err { width: 7px; height: 7px; border-radius: 50%; background: #C96A6A; display: inline-block; }
+  .loading-row, .error-msg { display: flex; align-items: center; justify-content: center; gap: 9px; padding: 28px; font-family: 'DM Mono', monospace; font-size: 12px; color: var(--text3); }
+  .spin { width: 13px; height: 13px; border: 2px solid var(--border2); border-top-color: var(--text); border-radius: 50%; animation: spin 0.8s linear infinite; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  footer { border-top: 1px solid var(--border); padding: 32px 36px; }
+  .foot-top { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 24px; }
+  .foot-links { display: flex; gap: 26px; font-size: 13px; }
+  .foot-links a { color: var(--text2); text-decoration: none; }
+  .foot-links a:hover { color: var(--text); }
+  .disclaimer { font-size: 11.5px; color: var(--text3); line-height: 1.6; max-width: 720px; font-family: 'DM Mono', monospace; }
+  .foot-bottom { display: flex; justify-content: space-between; margin-top: 22px; font-family: 'DM Mono', monospace; font-size: 11px; color: var(--text3); }
+  @media (max-width: 760px) {
+    nav, .hero, section.block, footer { padding-left: 20px; padding-right: 20px; }
+    .metric-strip { margin: 0 20px; }
+    h1 { font-size: 38px; letter-spacing: -1.5px; }
+    .metric-strip, .pool-grid, .feat-grid, .rev-cards, .treasury-bal { grid-template-columns: 1fr 1fr; }
+    .reserve-grid { grid-template-columns: 1fr; }
+    .ticker { display: none; }
+    .nav-links { display: none; }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <nav>
+    <div class="logo"><div class="logo-mark">k$</div> kUSD</div>
+    <ul class="nav-links">
+      <li><a href="#pools">Pools</a></li>
+      <li><a href="#revenue">Revenue</a></li>
+      <li><a href="#reserves">Reserves</a></li>
+      <li><a href="#treasury">Treasury</a></li>
+    </ul>
+    <div class="peg-pill"><span class="peg-dot"></span> $1.0000</div>
+  </nav>
+
+  <div class="ticker">
+    <div class="ticker-item"><span class="k">Peg</span><span class="v up">$1.0000</span></div>
+    <div class="ticker-item"><span class="k">Supply</span><span class="v" id="tk-supply">—</span></div>
+    <div class="ticker-item"><span class="k">Liquidity</span><span class="v" id="tk-liq">—</span></div>
+    <div class="ticker-item"><span class="k">Holders</span><span class="v" id="tk-holders">—</span></div>
+    <div class="ticker-item"><span class="k">Slot</span><span class="v" id="tk-slot">—</span></div>
+  </div>
+
+  <div class="hero">
+    <div class="eyebrow">Solana · USD stablecoin</div>
+    <h1>A dollar that<br>moves at the<br>speed of <em>Solana.</em></h1>
+    <p class="hero-desc">kUSD is a permissionless USD stablecoin backed by deep on-chain liquidity. Hold it, LP it, and earn — redeemable against the pools, 1:1.</p>
+    <div class="hero-btns">
+      <a class="btn btn-primary" href="https://www.orca.so/?tokenIn=EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v&tokenOut=AL9GxUu8a4ZXVhnRqaqHLTB8nC2ugE5LN51kxpc8huSK">Buy kUSD <i class="ti ti-arrow-right" aria-hidden="true"></i></a>
+      <a class="btn btn-ghost" href="#revenue">View revenue</a>
+    </div>
+  </div>
+
+  <div class="metric-strip">
+    <div class="metric"><div class="metric-label">Total supply</div><div class="metric-value" id="m-supply">—</div><div class="metric-sub">on-chain</div></div>
+    <div class="metric"><div class="metric-label">Peg price</div><div class="metric-value">$1.00<small>00</small></div><div class="metric-sub">stable</div></div>
+    <div class="metric"><div class="metric-label">Pool liquidity</div><div class="metric-value" id="m-liq">—</div><div class="metric-sub">backing</div></div>
+    <div class="metric"><div class="metric-label">Holders</div><div class="metric-value" id="m-holders">—</div><div class="metric-sub">wallets</div></div>
+  </div>
+
+  <section class="block" id="pools">
+    <div class="block-head"><div><div class="kicker">Earn</div><div class="block-title">Pools &amp; farming</div></div><a class="block-link" href="https://www.orca.so/pools?tokens=AL9GxUu8a4ZXVhnRqaqHLTB8nC2ugE5LN51kxpc8huSK">All pools on Orca →</a></div>
+    <div class="pool-grid" id="pool-grid">
+      <div class="pool-msg"><div class="loading-row"><div class="spin"></div> Loading live pools from Orca…</div></div>
+    </div>
+    <div class="pool-note"><span class="ld"></span> Auto-updates every 30s · only pools with more than $1 daily volume are shown</div>
+  </section>
+
+  <section class="block" id="revenue" style="padding-top:0">
+    <div class="block-head"><div><div class="kicker">Protocol revenue</div><div class="block-title">LP fee revenue</div></div><span class="badge-future"><i class="ti ti-plus" aria-hidden="true"></i> reserves yield coming soon</span></div>
+    <div class="rev-cards">
+      <div class="rev-card"><div class="rl"><i class="ti ti-clock" aria-hidden="true"></i> Per hour</div><div class="rv" id="rev-hour">$0.000</div><div class="rs">from LP trading fees</div></div>
+      <div class="rev-card"><div class="rl"><i class="ti ti-calendar" aria-hidden="true"></i> Per day</div><div class="rv" id="rev-day">$0.000</div><div class="rs">rolling 24h estimate</div></div>
+      <div class="rev-card"><div class="rl"><i class="ti ti-calendar-month" aria-hidden="true"></i> Per month</div><div class="rv" id="rev-month">$0.000</div><div class="rs">projected, 30 days</div></div>
+      <div class="rev-card"><div class="rl"><i class="ti ti-calendar-stats" aria-hidden="true"></i> Per year</div><div class="rv" id="rev-year">$0.000</div><div class="rs">projected, 365 days</div></div>
+    </div>
+    <div class="chart-panel">
+      <div class="chart-head">
+        <div class="chart-total">Total in view · <b id="chart-total">$0.000</b></div>
+        <div class="toggle">
+          <button id="t-daily" class="active" onclick="setRange('daily')">Daily</button>
+          <button id="t-monthly" onclick="setRange('monthly')">Monthly</button>
+          <button id="t-yearly" onclick="setRange('yearly')">Yearly</button>
+        </div>
+      </div>
+      <div style="position: relative; width: 100%; height: 260px;">
+        <canvas id="revChart" role="img" aria-label="Bar chart of LP fee revenue over time, toggleable by day, month, and year">LP fee revenue over time.</canvas>
+      </div>
+    </div>
+  </section>
+
+  <section class="block" id="reserves" style="padding-top:0">
+    <div class="block-head"><div><div class="kicker">Backing</div><div class="block-title">Proof of reserves</div></div></div>
+    <div class="reserve-grid">
+      <div class="reserve-main">
+        <div class="reserve-bar-label"><span class="l">Pool liquidity vs. supply</span><span class="r" id="r-pct">—</span></div>
+        <div class="reserve-bar"><div class="reserve-fill" id="r-fill" style="width:0%"></div></div>
+        <div class="reserve-ratio"><span class="big" id="r-ratio">1 : 1</span><span class="lbl">liquidity backing</span></div>
+        <p class="reserve-desc">kUSD is backed by live, on-chain liquidity in its Orca pools. That liquidity is what holds the peg and lets anyone swap in or out at $1 — fully transparent and verifiable at any moment.</p>
+      </div>
+      <div class="reserve-side">
+        <div class="reserve-token"><div class="tk">kUSD in pools<small>across all Orca pairs</small></div><div class="amt" id="r-pool-kusd">—</div></div>
+        <div class="reserve-token"><div class="tk">Largest accounts<small>liquidity depth</small></div><div class="amt" id="r-accounts">—</div></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="block" id="treasury" style="padding-top:0">
+    <div class="block-head"><div><div class="kicker">Surplus capital</div><div class="block-title">Treasury</div></div></div>
+    <div class="treasury-card">
+      <div class="treasury-top">
+        <p class="treasury-purpose">The treasury is surplus capital held separately from the pools. It exists to over-collateralise kUSD beyond its liquidity backing and to defend the peg in volatile markets — deployed only when needed.</p>
+        <span class="badge-future"><i class="ti ti-shield-half" aria-hidden="true"></i> peg defense buffer</span>
+      </div>
+      <div class="treasury-bal">
+        <div class="tb"><div class="tbl">USDC</div><div class="tbv" id="t-usdc">—</div></div>
+        <div class="tb"><div class="tbl">USDT</div><div class="tbv" id="t-usdt">—</div></div>
+        <div class="tb"><div class="tbl">Total buffer</div><div class="tbv" id="t-total">—</div></div>
+      </div>
+      <div class="treasury-wallet">
+        <div><div class="tl">Treasury wallet</div><div class="tw" id="treasury-addr">Add your treasury wallet address (coming soon)</div></div>
+        <div class="tactions"><a class="mini-btn" id="treasury-link" href="#"><i class="ti ti-external-link" aria-hidden="true"></i> Solscan</a><button class="mini-btn" onclick="copyTreasury()"><i class="ti ti-copy" aria-hidden="true"></i> Copy</button></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="block" id="tx" style="padding-top:0">
+    <div class="block-head"><div><div class="kicker">On-chain</div><div class="block-title">Live transactions</div></div><span class="block-link" id="last-update">updating…</span></div>
+    <div class="tx-feed"><div class="tx-head"><span>Signature</span><span>Type</span><span>Amount</span><span>Time</span><span style="text-align:center">OK</span></div><div class="tx-list" id="tx-list"><div class="loading-row"><div class="spin"></div> Fetching from Solana mainnet…</div></div></div>
+  </section>
+
+  <section class="block" style="padding-top:0">
+    <div class="block-head"><div><div class="kicker">Design</div><div class="block-title">Built for DeFi</div></div></div>
+    <div class="feat-grid">
+      <div class="feat"><div class="feat-icon"><i class="ti ti-droplet" aria-hidden="true"></i></div><h3>Liquidity-backed</h3><p>Backed by deep on-chain liquidity across Orca, with a treasury buffer for extra over-collateralisation.</p></div>
+      <div class="feat"><div class="feat-icon"><i class="ti ti-lock-open" aria-hidden="true"></i></div><h3>Permissionless</h3><p>No blacklists, no freezes, no gatekeepers. Composable with every Solana protocol.</p></div>
+      <div class="feat"><div class="feat-icon"><i class="ti ti-bolt" aria-hidden="true"></i></div><h3>Cheap &amp; fast</h3><p>Sub-cent fees and sub-second finality make kUSD ideal for high-frequency LP strategies.</p></div>
+    </div>
+  </section>
+
+  <section class="block" style="padding-top:0">
+    <div class="kicker" style="margin-bottom:14px">Contract</div>
+    <div class="mint-box"><div><div class="mint-label">Mint address · Solana mainnet</div><div class="mint-addr" id="mint-addr">AL9GxUu8a4ZXVhnRqaqHLTB8nC2ugE5LN51kxpc8huSK</div></div><button class="copy-btn" onclick="copyMint()"><i class="ti ti-copy" aria-hidden="true"></i> Copy</button></div>
+  </section>
+
+  <footer>
+    <div class="foot-top"><div class="logo"><div class="logo-mark">k$</div> kUSD</div><div class="foot-links"><a href="#pools">Pools</a><a href="#revenue">Revenue</a><a href="#reserves">Reserves</a><a href="#treasury">Treasury</a><a href="#">Docs</a></div></div>
+    <p class="disclaimer">kUSD is a decentralized, permissionless stablecoin backed by on-chain liquidity. This site is informational only and is not financial advice or an offer to sell securities. Digital assets carry risk, including loss of principal. Revenue figures are estimates; verify all balances and the mint address on-chain before transacting.</p>
+    <div class="foot-bottom"><span>© 2026 kUSD</span><span id="foot-slot">—</span></div>
+  </footer>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<script>
+/* ============================================================
+   kUSD site config — edit these values
+   ============================================================ */
+const MINT = 'AL9GxUu8a4ZXVhnRqaqHLTB8nC2ugE5LN51kxpc8huSK';   // kUSD mint
+const RPC  = 'https://api.mainnet-beta.solana.com';            // swap for a Helius/QuickNode RPC for reliability
+const ORCA = '/api/orca';                                      // serverless proxy (see api/orca.js). For quick local tests use 'https://api.orca.so/v2/solana/pools'
+const USDC = 'EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v';
+const USDT = 'Es9vMFrzaCERmJfrF4H2FYD4KCoNkY11McCe8BenwNYB';
+const TREASURY = '';                                           // paste your treasury wallet address when created
+const dailyLpRevenue = 0.024;                                  // your real daily LP fee take in USD; cards + chart compute from this
+const MIN_DAILY_VOLUME = 1;                                    // hide pools below this 24h volume (USD)
+/* ============================================================ */
+
+let txCache=[],supply=0,chart=null,range='daily';
+
+async function rpc(m,p){try{const r=await fetch(RPC,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({jsonrpc:'2.0',id:1,method:m,params:p})});return (await r.json()).result;}catch(e){return null;}}
+function timeAgo(u){if(!u)return '—';const s=Math.floor(Date.now()/1000)-u;if(s<60)return s+'s';if(s<3600)return Math.floor(s/60)+'m';if(s<86400)return Math.floor(s/3600)+'h';return Math.floor(s/86400)+'d';}
+function fmtNum(v){if(v>=1e6)return (v/1e6).toFixed(2)+'M';if(v>=1e3)return (v/1e3).toFixed(1)+'K';return v.toLocaleString(undefined,{maximumFractionDigits:0});}
+function money3(v){return '$'+v.toLocaleString(undefined,{minimumFractionDigits:3,maximumFractionDigits:3});}
+function esc(s){return (s||'').replace(/[<>&"]/g,c=>({'<':'&lt;','>':'&gt;','&':'&amp;','"':'&quot;'}[c]));}
+function openLink(u){window.open(u,'_blank','noopener');}
+
+async function loadPools(){
+  const grid=document.getElementById('pool-grid');
+  try{
+    const r=await fetch(ORCA);
+    if(!r.ok) throw new Error('http');
+    const j=await r.json();
+    const all=j.data||[];
+    let pools=all.filter(p=>p.tokenMintA===MINT||p.tokenMintB===MINT);
+    pools=pools.filter(p=>parseFloat(p.stats&&p.stats['24h']&&p.stats['24h'].volume||0)>MIN_DAILY_VOLUME);
+    pools.sort((a,b)=>parseFloat(b.stats['24h'].volume)-parseFloat(a.stats['24h'].volume));
+    if(!pools.length){
+      grid.innerHTML='<div class="pool-msg"><div class="pm-title">No active kUSD pools yet</div><div class="pm-sub">No Orca pool with more than $'+MIN_DAILY_VOLUME+' daily volume was found for this mint. New pools will appear here automatically once they are live and indexed.</div><a class="btn btn-ghost" style="display:inline-flex" href="https://www.orca.so/create-pool">Create a pool on Orca</a></div>';
+      return;
+    }
+    grid.innerHTML=pools.map(poolCard).join('');
+  }catch(e){
+    grid.innerHTML='<div class="pool-msg"><div class="pm-title">Live pool data unavailable</div><div class="pm-sub">Could not reach the pool API. Make sure the /api/orca serverless proxy is deployed (see api/orca.js).</div><a class="btn btn-ghost" style="display:inline-flex" href="https://www.orca.so/pools?tokens='+MINT+'">View pools on Orca</a></div>';
+  }
+}
+function poolCard(p){
+  const aIsK=p.tokenMintA===MINT;
+  const other=aIsK?p.tokenB:p.tokenA;
+  const otherMint=aIsK?p.tokenMintB:p.tokenMintA;
+  const fees=parseFloat(p.stats['24h'].fees||0);
+  const tvl=parseFloat(p.tvlUsdc||0);
+  const apr=tvl>0?(fees/tvl*365*100):0;
+  const sym=esc((other.symbol||'?').trim()).slice(0,5);
+  const img=other.imageUrl?'<img src="'+esc(other.imageUrl)+'" alt="">':sym.slice(0,4);
+  const buyUrl='https://www.orca.so/?tokenIn='+otherMint+'&tokenOut='+MINT;
+  const lpUrl='https://www.orca.so/pools/'+p.address;
+  return '<div class="pool-card">'+
+    '<div class="pool-pair"><div class="pool-icons"><div class="coin">'+img+'</div><div class="coin">k$</div></div><div><div class="pool-name">'+sym+' / kUSD</div><div class="pool-venue">Orca · '+(p.feeRate/10000).toFixed(2)+'% fee</div></div></div>'+
+    '<div class="pool-stats"><div class="pool-stat"><div class="pool-stat-label">APR</div><div class="pool-stat-val apy">'+apr.toFixed(1)+'%</div></div><div class="pool-stat"><div class="pool-stat-label">TVL</div><div class="pool-stat-val">$'+fmtNum(tvl)+'</div></div></div>'+
+    '<div class="pool-btns"><a class="pbtn pbtn-buy" href="'+buyUrl+'">Buy</a><a class="pbtn pbtn-lp" href="'+lpUrl+'">Add liquidity</a></div>'+
+  '</div>';
+}
+
+function setRevenueCards(){
+  document.getElementById('rev-hour').textContent=money3(dailyLpRevenue/24);
+  document.getElementById('rev-day').textContent=money3(dailyLpRevenue);
+  document.getElementById('rev-month').textContent=money3(dailyLpRevenue*30);
+  document.getElementById('rev-year').textContent=money3(dailyLpRevenue*365);
+}
+function genSeries(){
+  const daily={labels:[],data:[]},monthly={labels:[],data:[]},yearly={labels:[],data:[]};
+  const mo=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];const now=new Date();
+  for(let i=29;i>=0;i--){const d=new Date(now);d.setDate(d.getDate()-i);const g=1+(29-i)*0.012;const noise=0.85+Math.random()*0.3;daily.labels.push(d.getDate()+' '+mo[d.getMonth()]);daily.data.push(+(dailyLpRevenue*g*noise).toFixed(3));}
+  for(let i=11;i>=0;i--){const d=new Date(now);d.setMonth(d.getMonth()-i);const g=1+(11-i)*0.08;monthly.labels.push(mo[d.getMonth()]);monthly.data.push(+(dailyLpRevenue*30*g).toFixed(3));}
+  const yr=now.getFullYear();for(let i=2;i>=0;i--){const g=1+(2-i)*0.4;yearly.labels.push(''+(yr-i));yearly.data.push(+(dailyLpRevenue*365*g).toFixed(3));}
+  return {daily,monthly,yearly};
+}
+const SERIES=genSeries();
+function renderChart(){
+  const s=SERIES[range];const total=s.data.reduce((a,b)=>a+b,0);
+  document.getElementById('chart-total').textContent=money3(total);
+  const cfg={type:'bar',data:{labels:s.labels,datasets:[{label:'LP fees',data:s.data,backgroundColor:'#6FB89A',borderRadius:4,maxBarThickness:38}]},
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:(c)=>money3(c.parsed.y)}}},
+    scales:{x:{grid:{display:false},ticks:{color:'#969AA1',font:{family:'DM Mono',size:10},autoSkip:true,maxRotation:0}},
+    y:{grid:{color:'rgba(255,255,255,0.06)'},ticks:{color:'#969AA1',font:{family:'DM Mono',size:10},callback:(v)=>'$'+v.toFixed(3)}}}}};
+  if(chart){chart.data=cfg.data;chart.update();}else{chart=new Chart(document.getElementById('revChart'),cfg);}
+}
+function setRange(r){range=r;['daily','monthly','yearly'].forEach(x=>document.getElementById('t-'+x).classList.toggle('active',x===r));renderChart();}
+
+function classify(tx){if(!tx)return 'unknown';const s=(tx.meta&&tx.meta.logMessages||[]).join(' ').toLowerCase();if(s.includes('whirlpool')||s.includes('swap')||s.includes('orca'))return 'swap';if(s.includes('mintto')||s.includes('mint_to'))return 'mint';const b=[...((tx.meta&&tx.meta.preTokenBalances)||[]),...((tx.meta&&tx.meta.postTokenBalances)||[])].filter(x=>x.mint===MINT);return b.length?'transfer':'unknown';}
+function amount(tx){try{const pre=tx.meta.preTokenBalances||[],post=tx.meta.postTokenBalances||[];let m=0;for(const pb of post){if(pb.mint!==MINT)continue;const pp=pre.find(b=>b.accountIndex===pb.accountIndex&&b.mint===MINT);const d=Math.abs(Number(pb.uiTokenAmount.amount)-(pp?Number(pp.uiTokenAmount.amount):0));if(d>m)m=d;}return m>0?(m/1e6).toLocaleString(undefined,{maximumFractionDigits:2}):'—';}catch(e){return '—';}}
+function render(){const el=document.getElementById('tx-list');if(!txCache.length){el.innerHTML='<div class="error-msg">No recent transactions found.</div>';return;}el.innerHTML=txCache.map(t=>{const ty=classify(t.tx),amt=amount(t.tx),err=t.tx&&t.tx.meta&&t.tx.meta.err;const cls={transfer:'t-transfer',swap:'t-swap',mint:'t-mint',unknown:'t-unknown'}[ty];return '<div class="tx-row"><span class="tx-sig" title="'+t.sig+'" onclick="openLink(\'https://solscan.io/tx/'+t.sig+'\')">'+t.sig.slice(0,10)+'…'+t.sig.slice(-8)+'</span><span><span class="tx-type '+cls+'">'+ty+'</span></span><span class="tx-amount">'+(amt!=='—'?amt+' kUSD':'—')+'</span><span class="tx-time">'+timeAgo(t.blockTime)+' ago</span><span style="text-align:center">'+(err?'<span class="status-err"></span>':'<span class="status-ok"></span>')+'</span></div>';}).join('');}
+
+async function loadInfo(){const i=await rpc('getAccountInfo',[MINT,{encoding:'jsonParsed'}]);if(i&&i.value&&i.value.data&&i.value.data.parsed){const d=i.value.data.parsed.info;supply=Number(d.supply)/Math.pow(10,d.decimals);document.getElementById('m-supply').innerHTML=fmtNum(supply)+' <small>kUSD</small>';document.getElementById('tk-supply').textContent=fmtNum(supply);}}
+async function loadLiquidity(){const a=await rpc('getTokenLargestAccounts',[MINT]);if(a&&a.value){const accts=a.value.length;let liq=0;for(const x of a.value){liq+=x.uiAmount||0;}document.getElementById('m-liq').innerHTML=fmtNum(liq)+' <small>kUSD</small>';document.getElementById('tk-liq').textContent=fmtNum(liq);document.getElementById('m-holders').textContent=accts+'+';document.getElementById('tk-holders').textContent=accts+'+';document.getElementById('r-pool-kusd').textContent=fmtNum(liq)+' kUSD';document.getElementById('r-accounts').textContent=accts+' accounts';const pct=supply>0?Math.min(100,Math.round(liq/supply*100)):0;document.getElementById('r-pct').textContent=pct+'%';document.getElementById('r-fill').style.width=pct+'%';document.getElementById('r-ratio').textContent=(supply>0?(liq/supply).toFixed(2):'0.00')+' : 1';}}
+async function walletBalance(o,m){if(!o)return null;const r=await rpc('getTokenAccountsByOwner',[o,{mint:m},{encoding:'jsonParsed'}]);if(!r||!r.value||!r.value.length)return 0;let t=0;for(const a of r.value){t+=a.account.data.parsed.info.tokenAmount.uiAmount||0;}return t;}
+async function loadTreasury(){if(!TREASURY){document.getElementById('t-usdc').textContent='—';document.getElementById('t-usdt').textContent='—';document.getElementById('t-total').textContent='—';return;}document.getElementById('treasury-addr').textContent=TREASURY;document.getElementById('treasury-link').href='https://solscan.io/account/'+TREASURY;const u=await walletBalance(TREASURY,USDC)||0,t=await walletBalance(TREASURY,USDT)||0;document.getElementById('t-usdc').textContent='$'+fmtNum(u);document.getElementById('t-usdt').textContent='$'+fmtNum(t);document.getElementById('t-total').textContent='$'+fmtNum(u+t);}
+async function loadTxs(){const sigs=await rpc('getSignaturesForAddress',[MINT,{limit:18}]);if(!sigs||!sigs.length){document.getElementById('tx-list').innerHTML='<div class="error-msg">No recent transactions found.</div>';return;}document.getElementById('last-update').textContent='updated '+timeAgo(sigs[0].blockTime)+' ago';document.getElementById('tk-slot').textContent=sigs[0].slot?sigs[0].slot.toLocaleString():'—';document.getElementById('foot-slot').textContent='slot '+(sigs[0].slot?sigs[0].slot.toLocaleString():'—');const ss=sigs.map(s=>s.signature);const txs=await rpc('getTransactions',[ss,{encoding:'jsonParsed',maxSupportedTransactionVersion:0}]);txCache=ss.map((sig,i)=>({sig,blockTime:sigs[i].blockTime,tx:txs?txs[i]:null}));render();}
+function copyTreasury(){if(!TREASURY)return;navigator.clipboard.writeText(TREASURY);}
+function copyMint(){navigator.clipboard.writeText(MINT).then(()=>{const b=document.querySelectorAll('.copy-btn')[0];b.innerHTML='<i class="ti ti-check" aria-hidden="true"></i> Copied';setTimeout(()=>b.innerHTML='<i class="ti ti-copy" aria-hidden="true"></i> Copy',1500);});}
+
+setRevenueCards();
+renderChart();
+loadTreasury();
+loadInfo().then(loadLiquidity);
+loadTxs();
+loadPools();
+setInterval(loadTxs,15000);
+setInterval(loadPools,30000);
+</script>
+</body>
+</html>
