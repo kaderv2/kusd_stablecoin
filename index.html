@@ -275,7 +275,7 @@
     </div>
     <div class="chart-panel">
       <div class="chart-head">
-        <div class="chart-total">Total in view · <b id="chart-total">$0.000</b></div>
+        <div class="chart-total">Recorded total · <b id="chart-total">$0.000</b></div>
         <div class="toggle">
           <button id="t-daily" class="active" onclick="setRange('daily')">Daily</button>
           <button id="t-monthly" onclick="setRange('monthly')">Monthly</button>
@@ -352,10 +352,10 @@ const USDT = 'Es9vMFrzaCERmJfrF4H2FYD4KCoNkY11McCe8BenwNYB';
 const TREASURY = 'AMJv8nUiBsdHijwxYFLmg8eLoNs5N2oifXQQkQnRDCsG'; // treasury / reserve wallet
 const dailyLpRevenue = 0.024;                                  // your real daily LP fee take in USD; cards + chart compute from this
 const MIN_DAILY_VOLUME = 1;                                    // hide pools below this 24h volume (USD)
-const LAUNCH_DATE = '2026-05-15';                              // set this to the actual date you launched kUSD (YYYY-MM-DD)
+const LAUNCH_DATE = '2026-05-15';                              // informational only; chart history now comes from recorded daily snapshots
 /* ============================================================ */
 
-let txCache=[],supply=0,chart=null,range='daily';
+let txCache=[],supply=0,chart=null,range='daily',liveDaily=dailyLpRevenue;
 
 async function rpc(m,p){try{const r=await fetch(RPC,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({jsonrpc:'2.0',id:1,method:m,params:p})});return (await r.json()).result;}catch(e){return null;}}
 async function rpcBatch(reqs){try{const body=reqs.map((q,i)=>({jsonrpc:'2.0',id:i,method:q.method,params:q.params}));const r=await fetch(RPC,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});const arr=await r.json();const out=[];(Array.isArray(arr)?arr:[]).forEach(x=>{out[x.id]=x.result;});return out;}catch(e){return null;}}
@@ -417,11 +417,9 @@ async function loadPools(){
     // Compute real daily fee revenue from live pool data and update revenue section
     const realDaily=pools.reduce((sum,p)=>sum+parseFloat(p.stats&&p.stats['24h']&&p.stats['24h'].fees||0),0);
     if(realDaily>0){
+      liveDaily=realDaily;
       setRevenueCards(realDaily);
-      // Regenerate chart series with real daily figure
-      const newSeries=genSeries(realDaily);
-      Object.assign(SERIES,newSeries);
-      renderChart();
+      loadRevenueHistory(); // rebuild chart from recorded history + live today
     }
   }catch(e){
     grid.innerHTML='<div class="pool-msg"><div class="pm-title">Live pool data unavailable</div><div class="pm-sub">Could not reach the pool API. Make sure the /api/orca serverless proxy is deployed (see api/orca.js).</div><a class="btn btn-ghost" style="display:inline-flex" href="https://www.orca.so/pools?tokens='+MINT+'">View pools on Orca</a></div>';
@@ -475,52 +473,43 @@ function setRevenueCards(daily){
   document.getElementById('rev-month').textContent=money3(daily*30);
   document.getElementById('rev-year').textContent=money3(daily*365);
 }
-function genSeries(dailyOverride){
-  const base=dailyOverride||dailyLpRevenue;
+function buildSeriesFromHistory(records){
   const mo=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
-  const now=new Date();
-  const launch=new Date(LAUNCH_DATE);
-  const daily={labels:[],data:[]},monthly={labels:[],data:[]},yearly={labels:[],data:[]};
+  const today=new Date().toISOString().slice(0,10);
+  // Past days = recorded snapshots; today = live run-rate (freshest)
+  let recs=(records||[]).filter(r=>r && r.date && r.date!==today && r.fees>=0);
+  recs.push({date:today,fees:liveDaily});
+  recs.sort((a,b)=>a.date<b.date?-1:1);
 
-  // Daily — one bar per day from launch to today
-  const totalDays=Math.max(1,Math.floor((now-launch)/(1000*60*60*24)));
-  for(let i=totalDays;i>=0;i--){
-    const d=new Date(now);d.setDate(d.getDate()-i);
-    if(d<launch) continue;
-    const progress=(totalDays-i)/Math.max(totalDays,1);
-    const g=1+progress*0.3;
-    const noise=0.85+Math.random()*0.3;
-    daily.labels.push(d.getDate()+' '+mo[d.getMonth()]);
-    daily.data.push(+(base*g*noise).toFixed(3));
-  }
+  const daily={labels:[],data:[]};
+  recs.forEach(r=>{const d=new Date(r.date+'T00:00:00');daily.labels.push(d.getDate()+' '+mo[d.getMonth()]);daily.data.push(+(+r.fees).toFixed(3));});
 
-  // Monthly — one bar per calendar month from launch month to now
-  const launchYear=launch.getFullYear(),launchMonth=launch.getMonth();
-  const nowYear=now.getFullYear(),nowMonth=now.getMonth();
-  const totalMonths=(nowYear-launchYear)*12+(nowMonth-launchMonth);
-  for(let i=totalMonths;i>=0;i--){
-    const d=new Date(now);d.setDate(1);d.setMonth(d.getMonth()-i);
-    const progress=(totalMonths-i)/Math.max(totalMonths,1);
-    const g=1+progress*0.35;
-    monthly.labels.push(mo[d.getMonth()]+' '+d.getFullYear());
-    monthly.data.push(+(base*30*g).toFixed(3));
-  }
+  const mMap={};
+  recs.forEach(r=>{const k=r.date.slice(0,7);mMap[k]=(mMap[k]||0)+(+r.fees);});
+  const monthly={labels:[],data:[]};
+  Object.keys(mMap).sort().forEach(k=>{const p=k.split('-');monthly.labels.push(mo[+p[1]-1]+' '+p[0]);monthly.data.push(+mMap[k].toFixed(3));});
 
-  // Yearly — only current year (coin is new)
-  const daysThisYear=Math.min(totalDays,365);
-  yearly.labels.push(''+nowYear);
-  yearly.data.push(+(base*daysThisYear).toFixed(3));
+  const yMap={};
+  recs.forEach(r=>{const k=r.date.slice(0,4);yMap[k]=(yMap[k]||0)+(+r.fees);});
+  const yearly={labels:[],data:[]};
+  Object.keys(yMap).sort().forEach(k=>{yearly.labels.push(k);yearly.data.push(+yMap[k].toFixed(3));});
 
   return {daily,monthly,yearly};
 }
-const SERIES=genSeries();
+async function loadRevenueHistory(){
+  let records=[];
+  try{const j=await (await fetch('/api/revenue')).json();records=j.series||[];}catch(e){records=[];}
+  SERIES=buildSeriesFromHistory(records);
+  renderChart();
+}
+let SERIES={daily:{labels:[],data:[]},monthly:{labels:[],data:[]},yearly:{labels:[],data:[]}};
 function renderChart(){
-  const s=SERIES[range];const total=s.data.reduce((a,b)=>a+b,0);
+  const s=SERIES[range]||{labels:[],data:[]};const total=s.data.reduce((a,b)=>a+b,0);
   document.getElementById('chart-total').textContent=money3(total);
   const cfg={type:'bar',data:{labels:s.labels,datasets:[{label:'LP fees',data:s.data,backgroundColor:'#6FB89A',borderRadius:4,maxBarThickness:38}]},
     options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:(c)=>money3(c.parsed.y)}}},
     scales:{x:{grid:{display:false},ticks:{color:'#969AA1',font:{family:'DM Mono',size:10},autoSkip:true,maxRotation:0}},
-    y:{grid:{color:'rgba(255,255,255,0.06)'},ticks:{color:'#969AA1',font:{family:'DM Mono',size:10},callback:(v)=>'$'+v.toFixed(3)}}}}};
+    y:{beginAtZero:true,grid:{color:'rgba(255,255,255,0.06)'},ticks:{color:'#969AA1',font:{family:'DM Mono',size:10},callback:(v)=>'$'+v.toFixed(3)}}}}};
   if(chart){chart.data=cfg.data;chart.update();}else{chart=new Chart(document.getElementById('revChart'),cfg);}
 }
 function setRange(r){range=r;['daily','monthly','yearly'].forEach(x=>document.getElementById('t-'+x).classList.toggle('active',x===r));renderChart();}
@@ -585,7 +574,7 @@ function copyTreasury(){if(!TREASURY)return;navigator.clipboard.writeText(TREASU
 function copyMint(){navigator.clipboard.writeText(MINT).then(()=>{const b=document.getElementById('mint-copy-btn');if(b){b.innerHTML='<i class="ti ti-check" aria-hidden="true"></i> Copied';setTimeout(()=>b.innerHTML='<i class="ti ti-copy" aria-hidden="true"></i> Copy address',1500);}});}
 
 setRevenueCards(dailyLpRevenue);
-renderChart();
+loadRevenueHistory();
 loadTreasury();
 loadInfo().then(loadHolders);
 loadTxs();
