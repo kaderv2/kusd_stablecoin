@@ -39,12 +39,18 @@
   h1 em { font-style: normal; color: #FFFFFF; }
   .hero-desc { color: var(--text2); font-size: 17px; line-height: 1.6; max-width: 530px; margin-bottom: 36px; }
   .hero-btns { display: flex; gap: 11px; }
+  .hero-grid { display: grid; grid-template-columns: 1fr 300px; gap: 44px; align-items: center; }
+  .hero-mint { border: 1px solid var(--border2); background: var(--surface); border-radius: 15px; padding: 22px; }
+  .hm-label { font-family: 'DM Mono', monospace; font-size: 10.5px; color: var(--text3); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 13px; }
+  .hm-addr { font-family: 'DM Mono', monospace; font-size: 13px; word-break: break-all; line-height: 1.55; margin-bottom: 16px; color: var(--text); }
+  .hm-copy { width: 100%; border: 1px solid var(--border2); background: var(--surface2); color: var(--text); font-family: 'DM Mono', monospace; font-size: 12px; padding: 11px; border-radius: 9px; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 7px; transition: all 0.15s; }
+  .hm-copy:hover { background: var(--silver); color: #0B0C0E; border-color: var(--silver); }
   .btn { font-family: 'Archivo', sans-serif; font-size: 14px; font-weight: 600; padding: 13px 24px; border-radius: 10px; cursor: pointer; transition: all 0.15s; display: inline-flex; align-items: center; gap: 8px; text-decoration: none; }
   .btn-primary { background: var(--silver); color: #0B0C0E; border: 1px solid var(--silver); }
   .btn-primary:hover { background: #D4D6D9; }
   .btn-ghost { background: transparent; color: var(--text); border: 1px solid var(--border2); }
   .btn-ghost:hover { background: var(--surface); border-color: rgba(255,255,255,0.24); }
-  .metric-strip { display: grid; grid-template-columns: repeat(4, 1fr); border-top: 1px solid var(--border); border-bottom: 1px solid var(--border); margin: 0 36px; }
+  .metric-strip { display: grid; grid-template-columns: repeat(3, 1fr); border-top: 1px solid var(--border); border-bottom: 1px solid var(--border); margin: 0 36px; }
   .metric { padding: 26px 28px; border-right: 1px solid var(--border); }
   .metric:last-child { border-right: none; }
   .metric-label { font-family: 'DM Mono', monospace; font-size: 10.5px; color: var(--text3); text-transform: uppercase; letter-spacing: 1.5px; margin-bottom: 11px; }
@@ -192,6 +198,7 @@
     .metric-strip { margin: 0 20px; }
     h1 { font-size: 38px; letter-spacing: -1.5px; }
     .metric-strip, .pool-grid, .feat-grid, .rev-cards, .treasury-bal { grid-template-columns: 1fr 1fr; }
+    .hero-grid { grid-template-columns: 1fr; gap: 28px; }
     .reserve-grid { grid-template-columns: 1fr; }
     .ticker { display: none; }
     .nav-links { display: none; }
@@ -214,29 +221,43 @@
   <div class="ticker">
     <div class="ticker-item"><span class="k">Peg</span><span class="v up" id="tk-peg">$1.0000</span></div>
     <div class="ticker-item"><span class="k">Supply</span><span class="v" id="tk-supply">—</span></div>
-    <div class="ticker-item"><span class="k">Liquidity</span><span class="v" id="tk-liq">—</span></div>
     <div class="ticker-item"><span class="k">Holders</span><span class="v" id="tk-holders">—</span></div>
     <div class="ticker-item"><span class="k">Slot</span><span class="v" id="tk-slot">—</span></div>
   </div>
 
   <div class="hero">
-    <div class="eyebrow">Solana · USD stablecoin</div>
-    <h1>A dollar that<br>moves at the<br>speed of <em>Solana.</em></h1>
-    <p class="hero-desc">kUSD is a permissionless USD stablecoin backed by deep on-chain liquidity. Hold it, LP it, and earn — redeemable against the pools, 1:1.</p>
-    <div class="hero-btns">
-      <a class="btn btn-primary" href="https://www.orca.so/?tokenIn=EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v&tokenOut=AL9GxUu8a4ZXVhnRqaqHLTB8nC2ugE5LN51kxpc8huSK">Buy kUSD <i class="ti ti-arrow-right" aria-hidden="true"></i></a>
-      <a class="btn btn-ghost" href="#revenue">View revenue</a>
+    <div class="hero-grid">
+      <div>
+        <div class="eyebrow">Solana · USD stablecoin</div>
+        <h1>A dollar that<br>moves at the<br>speed of <em>Solana.</em></h1>
+        <p class="hero-desc">kUSD is a permissionless USD stablecoin backed by deep on-chain liquidity. Hold it, LP it, and earn — redeemable against the pools, 1:1.</p>
+        <div class="hero-btns">
+          <a class="btn btn-primary" href="https://www.orca.so/trade?tokenIn=EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v&tokenOut=AL9GxUu8a4ZXVhnRqaqHLTB8nC2ugE5LN51kxpc8huSK">Buy kUSD <i class="ti ti-arrow-right" aria-hidden="true"></i></a>
+          <a class="btn btn-ghost" href="#revenue">View revenue</a>
+        </div>
+      </div>
+      <div class="hero-side">
+        <div class="hero-mint">
+          <div class="hm-label">Contract · Solana mainnet</div>
+          <div class="hm-addr" id="mint-addr">AL9GxUu8a4ZXVhnRqaqHLTB8nC2ugE5LN51kxpc8huSK</div>
+          <button class="hm-copy" id="mint-copy-btn" onclick="copyMint()"><i class="ti ti-copy" aria-hidden="true"></i> Copy address</button>
+        </div>
+      </div>
     </div>
   </div>
 
   <div class="metric-strip">
     <div class="metric"><div class="metric-label">Total supply</div><div class="metric-value" id="m-supply">—</div><div class="metric-sub">on-chain</div></div>
     <div class="metric"><div class="metric-label">Peg price</div><div class="metric-value" id="m-peg">$1.00<small>00</small></div><div class="metric-sub" id="m-peg-sub">stable</div></div>
-    <div class="metric"><div class="metric-label">Pool liquidity</div><div class="metric-value" id="m-liq">—</div><div class="metric-sub">backing</div></div>
     <div class="metric"><div class="metric-label">Holders</div><div class="metric-value" id="m-holders">—</div><div class="metric-sub">wallets</div></div>
   </div>
 
-  <section class="block" id="pools">
+  <section class="block" id="tx">
+    <div class="block-head"><div><div class="kicker">On-chain</div><div class="block-title">Live transactions</div></div><span class="block-link" id="last-update">updating…</span></div>
+    <div class="tx-feed"><div class="tx-head"><span>Signature</span><span>Type</span><span>Amount</span><span>Time</span><span style="text-align:center">OK</span></div><div class="tx-list" id="tx-list"><div class="loading-row"><div class="spin"></div> Fetching from Solana mainnet…</div></div></div>
+  </section>
+
+  <section class="block" id="pools" style="padding-top:0">
     <div class="block-head"><div><div class="kicker">Earn</div><div class="block-title">Pools &amp; farming</div></div><a class="block-link" href="https://www.orca.so/pools?tokens=AL9GxUu8a4ZXVhnRqaqHLTB8nC2ugE5LN51kxpc8huSK">All pools on Orca →</a></div>
     <div class="pool-grid" id="pool-grid">
       <div class="pool-msg"><div class="loading-row"><div class="spin"></div> Loading live pools from Orca…</div></div>
@@ -278,7 +299,7 @@
       </div>
       <div class="reserve-side">
         <div class="reserve-token"><div class="tk">kUSD in pools<small>across all Orca pairs</small></div><div class="amt" id="r-pool-kusd">—</div></div>
-        <div class="reserve-token"><div class="tk">Largest accounts<small>liquidity depth</small></div><div class="amt" id="r-accounts">—</div></div>
+        <div class="reserve-token"><div class="tk">Active pools<small>backing the peg</small></div><div class="amt" id="r-accounts">—</div></div>
       </div>
     </div>
   </section>
@@ -302,11 +323,6 @@
     </div>
   </section>
 
-  <section class="block" id="tx" style="padding-top:0">
-    <div class="block-head"><div><div class="kicker">On-chain</div><div class="block-title">Live transactions</div></div><span class="block-link" id="last-update">updating…</span></div>
-    <div class="tx-feed"><div class="tx-head"><span>Signature</span><span>Type</span><span>Amount</span><span>Time</span><span style="text-align:center">OK</span></div><div class="tx-list" id="tx-list"><div class="loading-row"><div class="spin"></div> Fetching from Solana mainnet…</div></div></div>
-  </section>
-
   <section class="block" style="padding-top:0">
     <div class="block-head"><div><div class="kicker">Design</div><div class="block-title">Built for DeFi</div></div></div>
     <div class="feat-grid">
@@ -314,11 +330,6 @@
       <div class="feat"><div class="feat-icon"><i class="ti ti-lock-open" aria-hidden="true"></i></div><h3>Permissionless</h3><p>No blacklists, no freezes, no gatekeepers. Composable with every Solana protocol.</p></div>
       <div class="feat"><div class="feat-icon"><i class="ti ti-bolt" aria-hidden="true"></i></div><h3>Cheap &amp; fast</h3><p>Sub-cent fees and sub-second finality make kUSD ideal for high-frequency LP strategies.</p></div>
     </div>
-  </section>
-
-  <section class="block" style="padding-top:0">
-    <div class="kicker" style="margin-bottom:14px">Contract</div>
-    <div class="mint-box"><div><div class="mint-label">Mint address · Solana mainnet</div><div class="mint-addr" id="mint-addr">AL9GxUu8a4ZXVhnRqaqHLTB8nC2ugE5LN51kxpc8huSK</div></div><button class="copy-btn" onclick="copyMint()"><i class="ti ti-copy" aria-hidden="true"></i> Copy</button></div>
   </section>
 
   <footer>
@@ -393,6 +404,15 @@ async function loadPools(){
 
     // Live peg price from the deepest USDC (then USDT) kUSD pool
     updatePeg(all);
+
+    // Reserves = real kUSD locked across ALL Orca pools (accurate, from pool balances)
+    const allKusd=all.filter(p=>p.tokenMintA===MINT||p.tokenMintB===MINT);
+    let poolKusd=0;
+    allKusd.forEach(p=>{
+      const raw=p.tokenMintA===MINT?p.tokenBalanceA:p.tokenBalanceB;
+      poolKusd+=Number(raw||0)/1e6;
+    });
+    updateReserves(poolKusd,allKusd.length);
 
     // Compute real daily fee revenue from live pool data and update revenue section
     const realDaily=pools.reduce((sum,p)=>sum+parseFloat(p.stats&&p.stats['24h']&&p.stats['24h'].fees||0),0);
@@ -510,7 +530,30 @@ function amount(tx){try{const pre=tx.meta.preTokenBalances||[],post=tx.meta.post
 function render(){const el=document.getElementById('tx-list');if(!txCache.length){el.innerHTML='<div class="error-msg">No recent transactions found.</div>';return;}el.innerHTML=txCache.map(t=>{const ty=classify(t.tx),amt=amount(t.tx),err=t.err||(t.tx&&t.tx.meta&&t.tx.meta.err);const cls={transfer:'t-transfer',swap:'t-swap',mint:'t-mint',unknown:'t-unknown'}[ty];return '<div class="tx-row"><span class="tx-sig" title="'+t.sig+'" onclick="openLink(\'https://solscan.io/tx/'+t.sig+'\')">'+t.sig.slice(0,10)+'…'+t.sig.slice(-8)+'</span><span><span class="tx-type '+cls+'">'+ty+'</span></span><span class="tx-amount">'+(amt!=='—'?amt+' kUSD':'—')+'</span><span class="tx-time">'+timeAgo(t.blockTime)+' ago</span><span style="text-align:center">'+(err?'<span class="status-err"></span>':'<span class="status-ok"></span>')+'</span></div>';}).join('');}
 
 async function loadInfo(){const i=await rpc('getAccountInfo',[MINT,{encoding:'jsonParsed'}]);if(i&&i.value&&i.value.data&&i.value.data.parsed){const d=i.value.data.parsed.info;supply=Number(d.supply)/Math.pow(10,d.decimals);document.getElementById('m-supply').innerHTML=fmtNum(supply)+' <small>kUSD</small>';document.getElementById('tk-supply').textContent=fmtNum(supply);}}
-async function loadLiquidity(){const a=await rpc('getTokenLargestAccounts',[MINT]);if(a&&a.value){const accts=a.value.length;let liq=0;for(const x of a.value){liq+=x.uiAmount||0;}document.getElementById('m-liq').innerHTML=fmtNum(liq)+' <small>kUSD</small>';document.getElementById('tk-liq').textContent=fmtNum(liq);document.getElementById('m-holders').textContent=accts+'+';document.getElementById('tk-holders').textContent=accts+'+';document.getElementById('r-pool-kusd').textContent=fmtNum(liq)+' kUSD';document.getElementById('r-accounts').textContent=accts+' accounts';const pct=supply>0?Math.min(100,Math.round(liq/supply*100)):0;document.getElementById('r-pct').textContent=pct+'%';document.getElementById('r-fill').style.width=pct+'%';document.getElementById('r-ratio').textContent=(supply>0?(liq/supply).toFixed(2):'0.00')+' : 1';}}
+async function loadHolders(){
+  // Real holder count: enumerate token accounts for the mint, count non-empty
+  let count=null;
+  const accs=await rpc('getProgramAccounts',['TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA',{encoding:'jsonParsed',filters:[{dataSize:165},{memcmp:{offset:0,bytes:MINT}}]}]);
+  if(Array.isArray(accs)){
+    count=accs.filter(a=>{try{return a.account.data.parsed.info.tokenAmount.uiAmount>0;}catch(e){return false;}}).length;
+  }
+  if(count===null){ // fallback: top accounts (capped at 20)
+    const la=await rpc('getTokenLargestAccounts',[MINT]);
+    if(la&&la.value) count=la.value.filter(x=>x.uiAmount>0).length+'+';
+  }
+  if(count!==null){
+    document.getElementById('m-holders').textContent=count;
+    document.getElementById('tk-holders').textContent=count;
+  }
+}
+function updateReserves(poolKusd,poolCount){
+  document.getElementById('r-pool-kusd').textContent=fmtNum(poolKusd)+' kUSD';
+  document.getElementById('r-accounts').textContent=poolCount+(poolCount===1?' pool':' pools');
+  const pct=supply>0?Math.min(100,Math.round(poolKusd/supply*100)):0;
+  document.getElementById('r-pct').textContent=pct+'%';
+  document.getElementById('r-fill').style.width=pct+'%';
+  document.getElementById('r-ratio').textContent=(supply>0?(poolKusd/supply).toFixed(2):'0.00')+' : 1';
+}
 async function walletBalance(o,m){if(!o)return null;const r=await rpc('getTokenAccountsByOwner',[o,{mint:m},{encoding:'jsonParsed'}]);if(!r||!r.value||!r.value.length)return 0;let t=0;for(const a of r.value){t+=a.account.data.parsed.info.tokenAmount.uiAmount||0;}return t;}
 async function loadTreasury(){
   if(!TREASURY){document.getElementById('treasury-addr').textContent='Add your treasury wallet address';return;}
@@ -539,12 +582,12 @@ async function loadTreasury(){
 }
 async function loadTxs(){const sigs=await rpc('getSignaturesForAddress',[MINT,{limit:12}]);if(!sigs||!sigs.length){document.getElementById('tx-list').innerHTML='<div class="error-msg">No recent transactions found.</div>';return;}document.getElementById('last-update').textContent='updated '+timeAgo(sigs[0].blockTime)+' ago';document.getElementById('tk-slot').textContent=sigs[0].slot?sigs[0].slot.toLocaleString():'—';document.getElementById('foot-slot').textContent='slot '+(sigs[0].slot?sigs[0].slot.toLocaleString():'—');const reqs=sigs.map(s=>({method:'getTransaction',params:[s.signature,{encoding:'jsonParsed',maxSupportedTransactionVersion:0}]}));const txs=await rpcBatch(reqs);txCache=sigs.map((s,i)=>({sig:s.signature,blockTime:s.blockTime,err:s.err,tx:txs?txs[i]:null}));render();}
 function copyTreasury(){if(!TREASURY)return;navigator.clipboard.writeText(TREASURY);}
-function copyMint(){navigator.clipboard.writeText(MINT).then(()=>{const b=document.querySelectorAll('.copy-btn')[0];b.innerHTML='<i class="ti ti-check" aria-hidden="true"></i> Copied';setTimeout(()=>b.innerHTML='<i class="ti ti-copy" aria-hidden="true"></i> Copy',1500);});}
+function copyMint(){navigator.clipboard.writeText(MINT).then(()=>{const b=document.getElementById('mint-copy-btn');if(b){b.innerHTML='<i class="ti ti-check" aria-hidden="true"></i> Copied';setTimeout(()=>b.innerHTML='<i class="ti ti-copy" aria-hidden="true"></i> Copy address',1500);}});}
 
 setRevenueCards(dailyLpRevenue);
 renderChart();
 loadTreasury();
-loadInfo().then(loadLiquidity);
+loadInfo().then(loadHolders);
 loadTxs();
 loadPools();
 setInterval(loadTxs,15000);
