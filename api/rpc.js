@@ -8,7 +8,7 @@
 // Defaults to a permissive public node if not set.
 
 export default async function handler(req, res) {
-  const UPSTREAM = process.env.RPC_URL || 'https://solana-rpc.publicnode.com';
+  const UPSTREAM = process.env.RPC_URL || 'https://mainnet.helius-rpc.com/?api-key=76d05f70-1bc7-419f-82ab-39d09f7fcf0c';
   try {
     const body = typeof req.body === 'string' ? req.body : JSON.stringify(req.body || {});
     const upstream = await fetch(UPSTREAM, {
