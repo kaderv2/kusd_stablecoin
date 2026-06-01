@@ -556,14 +556,16 @@ async function loadTreasury(){
     const chEl=document.getElementById('t-change');
     chEl.textContent=(ch>=0?'+':'')+ch.toFixed(2)+'% · 24h';
     chEl.className='ts-change '+(ch>=0?'up':'down');
-    if(!hold.length){cont.innerHTML='<div class="hold-empty">No priced assets found in this wallet yet.</div>';return;}
+    if(!hold.length){cont.innerHTML='<div class="hold-empty">No assets found. If you just added the wallet, set a Helius RPC_URL in Vercel (the public RPC can block wallet lookups), then redeploy.</div>';return;}
     cont.innerHTML=hold.map(h=>{
       const chg=h.change24h||0;
       const sym=esc(h.symbol||'?');
       const img=h.img?'<img src="'+esc(h.img)+'" alt="">':sym.slice(0,3);
       const amt=h.amount.toLocaleString(undefined,{maximumFractionDigits:h.amount<1?6:2});
-      const val='$'+h.usdValue.toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2});
-      return '<div class="hold-row"><div class="hold-token"><div class="coin">'+img+'</div><div><div class="hn">'+sym+'</div><div class="ha">'+amt+'</div></div></div><div class="hold-val">'+val+'</div><div class="hold-chg '+(chg>=0?'up':'down')+'">'+(chg>=0?'+':'')+chg.toFixed(1)+'%</div></div>';
+      const priced=h.usdValue>0;
+      const val=priced?'$'+h.usdValue.toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2}):'<span style="color:var(--text3)">unpriced</span>';
+      const chgHtml=priced?'<div class="hold-chg '+(chg>=0?'up':'down')+'">'+(chg>=0?'+':'')+chg.toFixed(1)+'%</div>':'<div class="hold-chg" style="color:var(--text3)">—</div>';
+      return '<div class="hold-row"><div class="hold-token"><div class="coin">'+img+'</div><div><div class="hn">'+sym+'</div><div class="ha">'+amt+'</div></div></div><div class="hold-val">'+val+'</div>'+chgHtml+'</div>';
     }).join('');
   }catch(e){
     cont.innerHTML='<div class="hold-empty">Could not load treasury data. Ensure /api/treasury is deployed.</div>';
