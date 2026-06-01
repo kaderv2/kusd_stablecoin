@@ -8,12 +8,13 @@
 
 export default async function handler(req, res) {
   try {
-    const upstream = await fetch('https://api.orca.so/v2/solana/pools', {
+    // Use the search endpoint so small/new kUSD pools are returned.
+    // The generic /pools endpoint only returns high-volume pools.
+    const upstream = await fetch('https://api.orca.so/v2/solana/pools/search?q=KUSD', {
       headers: { accept: 'application/json' },
     });
     const data = await upstream.text();
 
-    // Cache at the edge for 30s to stay well under Orca's rate limits.
     res.setHeader('Content-Type', 'application/json');
     res.setHeader('Cache-Control', 's-maxage=30, stale-while-revalidate=60');
     res.setHeader('Access-Control-Allow-Origin', '*');
