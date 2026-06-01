@@ -342,9 +342,30 @@ async function loadPools(){
     if(!r.ok) throw new Error('http');
     const j=await r.json();
     const all=j.data||[];
+    // Pinned pairs — always shown first if they have a pool
+    const PINNED_MINTS=[
+      'EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v', // USDC
+      'Es9vMFrzaCERmJfrF4H2FYD4KCoNkY11McCe8BenwNYB', // USDT
+      'So11111111111111111111111111111111111111112',    // SOL
+    ];
     let pools=all.filter(p=>p.tokenMintA===MINT||p.tokenMintB===MINT);
     pools=pools.filter(p=>parseFloat(p.stats&&p.stats['24h']&&p.stats['24h'].volume||0)>MIN_DAILY_VOLUME);
-    pools.sort((a,b)=>parseFloat(b.stats['24h'].volume)-parseFloat(a.stats['24h'].volume));
+
+    // Separate pinned from others; pick highest-volume pool per pinned mint in case of duplicates
+    const pinned=[], pinnedSeen=new Set();
+    for(const m of PINNED_MINTS){
+      const matches=pools.filter(p=>(p.tokenMintA===m||p.tokenMintB===m));
+      if(matches.length){
+        matches.sort((a,b)=>parseFloat(b.stats['24h'].volume)-parseFloat(a.stats['24h'].volume));
+        pinned.push(matches[0]);
+        pinnedSeen.add(matches[0].address);
+      }
+    }
+    const others=pools
+      .filter(p=>!pinnedSeen.has(p.address))
+      .sort((a,b)=>parseFloat(b.stats['24h'].volume)-parseFloat(a.stats['24h'].volume))
+      .slice(0,8-pinned.length); // fill remaining slots up to 8 total
+    pools=[...pinned,...others];
     if(!pools.length){
       grid.innerHTML='<div class="pool-msg"><div class="pm-title">No active kUSD pools yet</div><div class="pm-sub">No Orca pool with more than $'+MIN_DAILY_VOLUME+' daily volume was found for this mint. New pools will appear here automatically once they are live and indexed.</div><a class="btn btn-ghost" style="display:inline-flex" href="https://www.orca.so/create-pool">Create a pool on Orca</a></div>';
       return;
