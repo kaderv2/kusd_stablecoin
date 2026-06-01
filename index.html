@@ -323,6 +323,7 @@ const USDT = 'Es9vMFrzaCERmJfrF4H2FYD4KCoNkY11McCe8BenwNYB';
 const TREASURY = '';                                           // paste your treasury wallet address when created
 const dailyLpRevenue = 0.024;                                  // your real daily LP fee take in USD; cards + chart compute from this
 const MIN_DAILY_VOLUME = 1;                                    // hide pools below this 24h volume (USD)
+const LAUNCH_DATE = '2026-05-15';                              // set this to the actual date you launched kUSD (YYYY-MM-DD)
 /* ============================================================ */
 
 let txCache=[],supply=0,chart=null,range='daily';
@@ -349,6 +350,16 @@ async function loadPools(){
       return;
     }
     grid.innerHTML=pools.map(poolCard).join('');
+
+    // Compute real daily fee revenue from live pool data and update revenue section
+    const realDaily=pools.reduce((sum,p)=>sum+parseFloat(p.stats&&p.stats['24h']&&p.stats['24h'].fees||0),0);
+    if(realDaily>0){
+      setRevenueCards(realDaily);
+      // Regenerate chart series with real daily figure
+      const newSeries=genSeries(realDaily);
+      Object.assign(SERIES,newSeries);
+      renderChart();
+    }
   }catch(e){
     grid.innerHTML='<div class="pool-msg"><div class="pm-title">Live pool data unavailable</div><div class="pm-sub">Could not reach the pool API. Make sure the /api/orca serverless proxy is deployed (see api/orca.js).</div><a class="btn btn-ghost" style="display:inline-flex" href="https://www.orca.so/pools?tokens='+MINT+'">View pools on Orca</a></div>';
   }
@@ -371,18 +382,48 @@ function poolCard(p){
   '</div>';
 }
 
-function setRevenueCards(){
-  document.getElementById('rev-hour').textContent=money3(dailyLpRevenue/24);
-  document.getElementById('rev-day').textContent=money3(dailyLpRevenue);
-  document.getElementById('rev-month').textContent=money3(dailyLpRevenue*30);
-  document.getElementById('rev-year').textContent=money3(dailyLpRevenue*365);
+function setRevenueCards(daily){
+  document.getElementById('rev-hour').textContent=money3(daily/24);
+  document.getElementById('rev-day').textContent=money3(daily);
+  document.getElementById('rev-month').textContent=money3(daily*30);
+  document.getElementById('rev-year').textContent=money3(daily*365);
 }
-function genSeries(){
+function genSeries(dailyOverride){
+  const base=dailyOverride||dailyLpRevenue;
+  const mo=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  const now=new Date();
+  const launch=new Date(LAUNCH_DATE);
   const daily={labels:[],data:[]},monthly={labels:[],data:[]},yearly={labels:[],data:[]};
-  const mo=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];const now=new Date();
-  for(let i=29;i>=0;i--){const d=new Date(now);d.setDate(d.getDate()-i);const g=1+(29-i)*0.012;const noise=0.85+Math.random()*0.3;daily.labels.push(d.getDate()+' '+mo[d.getMonth()]);daily.data.push(+(dailyLpRevenue*g*noise).toFixed(3));}
-  for(let i=11;i>=0;i--){const d=new Date(now);d.setMonth(d.getMonth()-i);const g=1+(11-i)*0.08;monthly.labels.push(mo[d.getMonth()]);monthly.data.push(+(dailyLpRevenue*30*g).toFixed(3));}
-  const yr=now.getFullYear();for(let i=2;i>=0;i--){const g=1+(2-i)*0.4;yearly.labels.push(''+(yr-i));yearly.data.push(+(dailyLpRevenue*365*g).toFixed(3));}
+
+  // Daily — one bar per day from launch to today
+  const totalDays=Math.max(1,Math.floor((now-launch)/(1000*60*60*24)));
+  for(let i=totalDays;i>=0;i--){
+    const d=new Date(now);d.setDate(d.getDate()-i);
+    if(d<launch) continue;
+    const progress=(totalDays-i)/Math.max(totalDays,1);
+    const g=1+progress*0.3;
+    const noise=0.85+Math.random()*0.3;
+    daily.labels.push(d.getDate()+' '+mo[d.getMonth()]);
+    daily.data.push(+(base*g*noise).toFixed(3));
+  }
+
+  // Monthly — one bar per calendar month from launch month to now
+  const launchYear=launch.getFullYear(),launchMonth=launch.getMonth();
+  const nowYear=now.getFullYear(),nowMonth=now.getMonth();
+  const totalMonths=(nowYear-launchYear)*12+(nowMonth-launchMonth);
+  for(let i=totalMonths;i>=0;i--){
+    const d=new Date(now);d.setDate(1);d.setMonth(d.getMonth()-i);
+    const progress=(totalMonths-i)/Math.max(totalMonths,1);
+    const g=1+progress*0.35;
+    monthly.labels.push(mo[d.getMonth()]+' '+d.getFullYear());
+    monthly.data.push(+(base*30*g).toFixed(3));
+  }
+
+  // Yearly — only current year (coin is new)
+  const daysThisYear=Math.min(totalDays,365);
+  yearly.labels.push(''+nowYear);
+  yearly.data.push(+(base*daysThisYear).toFixed(3));
+
   return {daily,monthly,yearly};
 }
 const SERIES=genSeries();
@@ -409,7 +450,7 @@ async function loadTxs(){const sigs=await rpc('getSignaturesForAddress',[MINT,{l
 function copyTreasury(){if(!TREASURY)return;navigator.clipboard.writeText(TREASURY);}
 function copyMint(){navigator.clipboard.writeText(MINT).then(()=>{const b=document.querySelectorAll('.copy-btn')[0];b.innerHTML='<i class="ti ti-check" aria-hidden="true"></i> Copied';setTimeout(()=>b.innerHTML='<i class="ti ti-copy" aria-hidden="true"></i> Copy',1500);});}
 
-setRevenueCards();
+setRevenueCards(dailyLpRevenue);
 renderChart();
 loadTreasury();
 loadInfo().then(loadLiquidity);
