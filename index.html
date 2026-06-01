@@ -394,7 +394,7 @@ function poolCard(p){
   const apr=tvl>0?(fees/tvl*365*100):0;
   const sym=esc((other.symbol||'?').trim()).slice(0,5);
   const img=other.imageUrl?'<img src="'+esc(other.imageUrl)+'" alt="">':sym.slice(0,4);
-  const buyUrl='https://www.orca.so/?tokenIn='+otherMint+'&tokenOut='+MINT;
+  const buyUrl='https://www.orca.so/trade?tokenIn='+otherMint+'&tokenOut='+MINT;
   const lpUrl='https://www.orca.so/pools/'+p.address;
   return '<div class="pool-card">'+
     '<div class="pool-pair"><div class="pool-icons"><div class="coin">'+img+'</div><div class="coin">k$</div></div><div><div class="pool-name">'+sym+' / kUSD</div><div class="pool-venue">Orca · '+(p.feeRate/10000).toFixed(2)+'% fee</div></div></div>'+
