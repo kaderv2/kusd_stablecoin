@@ -124,6 +124,10 @@
   .treasury-purpose { font-size: 13px; color: var(--text2); line-height: 1.6; max-width: 460px; }
   .treasury-bal { display: grid; grid-template-columns: repeat(3, 1fr); gap: 0; border: 1px solid var(--border); border-radius: 12px; overflow: hidden; margin-bottom: 18px; }
   .treasury-summary { display: flex; align-items: flex-end; justify-content: space-between; padding-bottom: 18px; margin-bottom: 18px; border-bottom: 1px solid var(--border); }
+  .ts-chart-wrap { padding-bottom: 20px; margin-bottom: 18px; border-bottom: 1px solid var(--border); }
+  .ts-chart-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px; }
+  .ts-chart-label { font-family: 'DM Mono', monospace; font-size: 10.5px; color: var(--text3); text-transform: uppercase; letter-spacing: 1px; }
+  .ts-chart-note { font-family: 'DM Mono', monospace; font-size: 11px; color: var(--text3); }
   .ts-label { font-family: 'DM Mono', monospace; font-size: 10.5px; color: var(--text3); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 8px; }
   .ts-total { font-size: 32px; font-weight: 700; letter-spacing: -1.2px; font-feature-settings: 'tnum'; }
   .ts-change { font-family: 'DM Mono', monospace; font-size: 13px; padding: 4px 10px; border-radius: 7px; border: 1px solid var(--border2); }
@@ -314,6 +318,10 @@
       <div class="treasury-summary">
         <div><div class="ts-label">Total treasury value</div><div class="ts-total" id="t-total">—</div></div>
         <div class="ts-change" id="t-change">—</div>
+      </div>
+      <div class="ts-chart-wrap">
+        <div class="ts-chart-head"><span class="ts-chart-label">Value over time</span><span class="ts-chart-note" id="ts-chart-note"></span></div>
+        <div style="position:relative;width:100%;height:170px;"><canvas id="treasuryChart" role="img" aria-label="Treasury total value over time"></canvas></div>
       </div>
       <div class="holdings" id="treasury-holdings"><div class="loading-row"><div class="spin"></div> Loading holdings…</div></div>
       <div class="treasury-wallet">
@@ -544,6 +552,28 @@ function updateReserves(poolKusd,poolCount){
   document.getElementById('r-ratio').textContent=(supply>0?(poolKusd/supply).toFixed(2):'0.00')+' : 1';
 }
 async function walletBalance(o,m){if(!o)return null;const r=await rpc('getTokenAccountsByOwner',[o,{mint:m},{encoding:'jsonParsed'}]);if(!r||!r.value||!r.value.length)return 0;let t=0;for(const a of r.value){t+=a.account.data.parsed.info.tokenAmount.uiAmount||0;}return t;}
+let treasuryLive=0,treasuryChart=null;
+function renderTreasuryChart(records){
+  const mo=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  const today=new Date().toISOString().slice(0,10);
+  let recs=(records||[]).filter(r=>r&&r.date&&r.date!==today&&r.value>=0);
+  recs.push({date:today,value:treasuryLive});
+  recs.sort((a,b)=>a.date<b.date?-1:1);
+  const labels=recs.map(r=>{const d=new Date(r.date+'T00:00:00');return d.getDate()+' '+mo[d.getMonth()];});
+  const data=recs.map(r=>+(+r.value).toFixed(2));
+  const note=document.getElementById('ts-chart-note');
+  if(note)note.textContent=recs.length<2?'recording started — history builds daily':recs.length+' days recorded';
+  const cfg={type:'line',data:{labels,datasets:[{label:'Treasury value',data,borderColor:'#6FB89A',backgroundColor:'rgba(111,184,154,0.10)',borderWidth:2,fill:true,tension:0.3,pointRadius:recs.length<=2?3:0,pointHoverRadius:4,pointBackgroundColor:'#6FB89A'}]},
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:(c)=>'$'+c.parsed.y.toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2})}}},
+    scales:{x:{grid:{display:false},ticks:{color:'#969AA1',font:{family:'DM Mono',size:10},autoSkip:true,maxRotation:0}},
+    y:{beginAtZero:true,grid:{color:'rgba(255,255,255,0.06)'},ticks:{color:'#969AA1',font:{family:'DM Mono',size:10},callback:(v)=>'$'+v.toLocaleString(undefined,{maximumFractionDigits:2})}}}}};
+  if(treasuryChart){treasuryChart.data=cfg.data;treasuryChart.update();}else{treasuryChart=new Chart(document.getElementById('treasuryChart'),cfg);}
+}
+async function loadTreasuryHistory(){
+  let records=[];
+  try{const j=await (await fetch('/api/treasury-history')).json();records=j.series||[];}catch(e){records=[];}
+  renderTreasuryChart(records);
+}
 async function loadTreasury(){
   if(!TREASURY){document.getElementById('treasury-addr').textContent='Add your treasury wallet address';return;}
   document.getElementById('treasury-addr').textContent=TREASURY;
@@ -552,6 +582,8 @@ async function loadTreasury(){
   try{
     const j=await (await fetch('/api/treasury?wallet='+TREASURY)).json();
     const total=j.totalUsd||0,ch=j.change24h||0,hold=j.holdings||[];
+    treasuryLive=total;
+    loadTreasuryHistory();
     document.getElementById('t-total').textContent='$'+total.toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2});
     const chEl=document.getElementById('t-change');
     chEl.textContent=(ch>=0?'+':'')+ch.toFixed(2)+'% · 24h';
