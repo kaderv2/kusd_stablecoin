@@ -1,21 +1,23 @@
 // api/revenue.js
-// Returns the recorded daily LP fee history as { series: [{date, fees}, ...] }.
-// Reads from the same Upstash Redis hash that api/snapshot.js writes to.
-// If storage isn't configured yet, returns an empty series and the front-end
-// will just show today's live figure until the daily snapshots accumulate.
+// Returns the recorded daily LP fee history: { series: [{date, fees}, ...] }.
+// Reads the same Redis hash api/snapshot.js writes to. Auto-detects the
+// Upstash/KV credentials regardless of the env var names Vercel injects.
 
 function kv() {
-  const url = process.env.KV_REST_API_URL || process.env.UPSTASH_REDIS_REST_URL;
-  const token = process.env.KV_REST_API_TOKEN || process.env.UPSTASH_REDIS_REST_TOKEN;
+  const e = process.env;
+  const url = e.KV_REST_API_URL || e.UPSTASH_REDIS_REST_URL || e.REDIS_REST_API_URL ||
+    (Object.keys(e).filter(k => /REST_API_URL$/.test(k) || /UPSTASH.*URL$/.test(k)).map(k => e[k])[0]);
+  const token = e.KV_REST_API_TOKEN || e.UPSTASH_REDIS_REST_TOKEN || e.REDIS_REST_API_TOKEN ||
+    (Object.keys(e).filter(k => /REST_API_TOKEN$/.test(k) || /UPSTASH.*TOKEN$/.test(k)).map(k => e[k])[0]);
   return { url, token };
 }
 
 export default async function handler(req, res) {
   const { url, token } = kv();
   res.setHeader('Access-Control-Allow-Origin', '*');
-  res.setHeader('Cache-Control', 's-maxage=300, stale-while-revalidate=600');
+  res.setHeader('Cache-Control', 's-maxage=120, stale-while-revalidate=300');
   if (!url || !token) {
-    res.status(200).json({ series: [] });
+    res.status(200).json({ series: [], configured: false });
     return;
   }
   try {
@@ -31,8 +33,8 @@ export default async function handler(req, res) {
       series.push({ date: arr[i], fees: parseFloat(arr[i + 1]) });
     }
     series.sort((a, b) => (a.date < b.date ? -1 : 1));
-    res.status(200).json({ series });
+    res.status(200).json({ series, configured: true });
   } catch (err) {
-    res.status(200).json({ series: [] });
+    res.status(200).json({ series: [], configured: true, error: String(err) });
   }
 }
