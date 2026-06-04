@@ -1,104 +1,40 @@
-// api/treasury.js
-// Lists every asset held by the treasury wallet with USD value + 24h change.
-// Balances come from Solana RPC; prices from Jupiter (primary) + DexScreener
-// (symbols/images/fallback price). Shows assets even if unpriced.
-//
-// Uses env RPC_URL (set this to a Helius URL for reliability). Override the
-// wallet with ?wallet=<address> or env TREASURY_WALLET.
+// api/treasury-history.js
+// Returns the recorded daily treasury value history:
+//   { series: [{date, value}, ...], configured }
+// Reads the kusd:treasury hash that api/snapshot.js writes to.
 
-const TOKEN_PROGRAM = 'TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA';
-const TOKEN_2022 = 'TokenzQdBNbLqP5VEhdkAS6EPFLC1PHnBqCXEpPxuEb';
-const SOL_MINT = 'So11111111111111111111111111111111111111112';
-
-async function rpc(upstream, method, params) {
-  const r = await fetch(upstream, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ jsonrpc: '2.0', id: 1, method, params }),
-  });
-  const j = await r.json();
-  if (j.error) throw new Error(method + ': ' + (j.error.message || JSON.stringify(j.error)));
-  return j.result;
+function kv() {
+  const e = process.env;
+  const url = e.KV_REST_API_URL || e.UPSTASH_REDIS_REST_URL || e.REDIS_REST_API_URL ||
+    (Object.keys(e).filter(k => /REST_API_URL$/.test(k) || /UPSTASH.*URL$/.test(k)).map(k => e[k])[0]);
+  const token = e.KV_REST_API_TOKEN || e.UPSTASH_REDIS_REST_TOKEN || e.REDIS_REST_API_TOKEN ||
+    (Object.keys(e).filter(k => /REST_API_TOKEN$/.test(k) || /UPSTASH.*TOKEN$/.test(k)).map(k => e[k])[0]);
+  return { url, token };
 }
 
 export default async function handler(req, res) {
-  const UPSTREAM = process.env.RPC_URL || 'https://solana-rpc.publicnode.com';
-  const WALLET = (req.query && req.query.wallet) || process.env.TREASURY_WALLET ||
-    'AMJv8nUiBsdHijwxYFLmg8eLoNs5N2oifXQQkQnRDCsG';
-  const debug = { rpc: false, tokenAccounts: 0, priced: 0, errors: [] };
+  const { url, token } = kv();
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('Cache-Control', 's-maxage=120, stale-while-revalidate=300');
+  if (!url || !token) {
+    res.status(200).json({ series: [], configured: false });
+    return;
+  }
   try {
-    let accounts = [];
-    let solAmt = 0;
-    try {
-      const [ta, ta22, bal] = await Promise.all([
-        rpc(UPSTREAM, 'getTokenAccountsByOwner', [WALLET, { programId: TOKEN_PROGRAM }, { encoding: 'jsonParsed' }]),
-        rpc(UPSTREAM, 'getTokenAccountsByOwner', [WALLET, { programId: TOKEN_2022 }, { encoding: 'jsonParsed' }]).catch(e => { debug.errors.push(String(e)); return null; }),
-        rpc(UPSTREAM, 'getBalance', [WALLET]),
-      ]);
-      accounts = [...((ta && ta.value) || []), ...((ta22 && ta22.value) || [])];
-      solAmt = ((bal && bal.value) || 0) / 1e9;
-      debug.rpc = true;
-    } catch (e) {
-      debug.errors.push(String(e));
+    const r = await fetch(url, {
+      method: 'POST',
+      headers: { Authorization: 'Bearer ' + token, 'Content-Type': 'application/json' },
+      body: JSON.stringify(['HGETALL', 'kusd:treasury']),
+    });
+    const j = await r.json();
+    const arr = (j && j.result) || [];
+    const series = [];
+    for (let i = 0; i < arr.length; i += 2) {
+      series.push({ date: arr[i], value: parseFloat(arr[i + 1]) });
     }
-
-    let holdings = accounts.map(a => {
-      const info = a.account.data.parsed.info;
-      return { mint: info.mint, amount: info.tokenAmount.uiAmount || 0 };
-    }).filter(h => h.amount > 0);
-    if (solAmt > 0) holdings.unshift({ mint: SOL_MINT, amount: solAmt });
-    debug.tokenAccounts = holdings.length;
-
-    const mints = [...new Set(holdings.map(h => h.mint))].slice(0, 40);
-
-    // Jupiter price v3 (primary): usdPrice + priceChange24h, no key needed
-    const jup = {};
-    if (mints.length) {
-      try {
-        const jr = await (await fetch('https://lite-api.jup.ag/price/v3?ids=' + mints.join(','))).json();
-        Object.keys(jr || {}).forEach(m => { if (jr[m]) jup[m] = jr[m]; });
-      } catch (e) { debug.errors.push('jup: ' + e); }
-    }
-    // DexScreener (symbols/images + fallback price/change)
-    const ds = {};
-    if (mints.length) {
-      try {
-        const dr = await (await fetch('https://api.dexscreener.com/tokens/v1/solana/' + mints.join(','))).json();
-        (Array.isArray(dr) ? dr : []).forEach(p => {
-          const m = p.baseToken && p.baseToken.address;
-          if (!m) return;
-          const liq = parseFloat((p.liquidity && p.liquidity.usd) || 0);
-          if (!ds[m] || liq > ds[m]._liq) {
-            ds[m] = { symbol: p.baseToken.symbol, name: p.baseToken.name, price: parseFloat(p.priceUsd || 0), change24h: parseFloat((p.priceChange && p.priceChange.h24) || 0), img: (p.info && p.info.imageUrl) || null, _liq: liq };
-          }
-        });
-      } catch (e) { debug.errors.push('ds: ' + e); }
-    }
-
-    const known = { [SOL_MINT]: 'SOL', 'EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v': 'USDC', 'Es9vMFrzaCERmJfrF4H2FYD4KCoNkY11McCe8BenwNYB': 'USDT' };
-
-    let total = 0;
-    holdings = holdings.map(h => {
-      const j = jup[h.mint], d = ds[h.mint] || {};
-      const price = (j && j.usdPrice) || d.price || 0;
-      const change24h = (j && typeof j.priceChange24h === 'number') ? j.priceChange24h : (d.change24h || 0);
-      const usdValue = h.amount * price;
-      if (usdValue > 0) { total += usdValue; debug.priced++; }
-      return {
-        mint: h.mint, amount: h.amount,
-        symbol: d.symbol || known[h.mint] || (h.mint.slice(0, 4) + '…'),
-        price, usdValue, change24h, img: d.img || null,
-      };
-    }).sort((a, b) => b.usdValue - a.usdValue);
-
-    let change24h = 0;
-    if (total > 0) holdings.forEach(h => { change24h += (h.usdValue / total) * h.change24h; });
-
-    res.setHeader('Content-Type', 'application/json');
-    res.setHeader('Access-Control-Allow-Origin', '*');
-    res.setHeader('Cache-Control', 's-maxage=60, stale-while-revalidate=120');
-    res.status(200).json({ wallet: WALLET, totalUsd: total, change24h, holdings, debug });
+    series.sort((a, b) => (a.date < b.date ? -1 : 1));
+    res.status(200).json({ series, configured: true });
   } catch (err) {
-    res.status(200).json({ wallet: WALLET, totalUsd: 0, change24h: 0, holdings: [], debug, error: String(err) });
+    res.status(200).json({ series: [], configured: true, error: String(err) });
   }
 }
